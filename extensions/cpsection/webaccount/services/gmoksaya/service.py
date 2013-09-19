@@ -29,7 +29,6 @@ from sugar3.graphics import style
 class WebService(WebService):
     def __init__(self):
         self._account = accountsmanager.get_account('gmoksaya')
-        logging.error(self._account)
 
     def get_icon_name(self):
         return 'network-mesh'
@@ -48,19 +47,28 @@ class WebService(WebService):
 
     def _get_public_id_cb(self, user, info):
         client = GConf.Client.get_default()
-        client.set_string(self._account.PUBLIC_ID, info['id'])
+        client.set_string(self._account.PUBLIC_ID, str(info['id']))
 
     def _save_credentials(self, username, password):
         logging.error('SAVE CREDENTIALS')
         client = GConf.Client.get_default()
         client.set_string(self._account.USERNAME, username)
+        self._account.gmoksaya.settings.credentials['username'] = username
 
         api_key = self._get_key(username, password)
         client.set_string(self._account.API_KEY, api_key)
+        self._account.gmoksaya.settings.credentials['api_key'] = api_key
 
-        user = self._account.users.User()
+        user = self._account.gmoksaya.User()
         user.connect('completed', self._get_public_id_cb)
         user.info(username)
+
+    def _save_credentials_cb(self, button, data=None):
+        button.set_label('Saving ...')
+        username = self._uentry.get_text()
+        password = self._pentry.get_text()
+        self._save_credentials(username, password)
+        button.set_label('Saved')
 
     def config_service_cb(self, widget, event, container):
         separator = Gtk.HSeparator()
@@ -68,8 +76,8 @@ class WebService(WebService):
         title = Gtk.Label(label=_('Moksaya: Project Sharing Website'))
         title.set_alignment(0, 0)
 
-        info = Gtk.Label(_("Your password is not saved, it is used to "
-                           "fetch an API key"))
+        info = Gtk.Label(_("Passwords are only used to fetch API keys."
+                           " They are not saved."))
         info.set_alignment(0, 0)
         info.set_line_wrap(True)
 
@@ -80,22 +88,27 @@ class WebService(WebService):
 
         self._uentry = Gtk.Entry()
         self._uentry.set_alignment(0)
-        self._uentry.set_size_request(int(Gdk.Screen.width() / 3), -1)
+        self._uentry.set_size_request(int(Gdk.Screen.width() / 4), -1)
 
         plabel = Gtk.Label(_('Password'))
         plabel.set_alignment(1, 0.5)
         plabel.modify_fg(Gtk.StateType.NORMAL,
                          style.COLOR_SELECTION_GREY.get_gdk_color())
 
-        self._pentry = Gtk.Entry()
+        self._pentry = Gtk.Entry(visibility=False)
         self._pentry.set_alignment(0)
-        self._pentry.set_size_request(int(Gdk.Screen.width() / 3), -1)
+        self._pentry.set_size_request(int(Gdk.Screen.width() / 4), -1)
+
+        self._save = Gtk.Button(label="Save")
+        self._pentry.set_size_request(int(Gdk.Screen.width() / 4), -1)
+        self._save.connect('pressed', self._save_credentials_cb)
 
         form = Gtk.HBox(spacing=style.DEFAULT_SPACING)
         form.pack_start(ulabel, False, True, 0)
         form.pack_start(self._uentry, False, True, 0)
         form.pack_start(plabel, False, True, 0)
         form.pack_start(self._pentry, False, True, 0)
+        form.pack_start(self._save, False, True, 0)
 
         vbox = Gtk.VBox()
         vbox.set_border_width(style.DEFAULT_SPACING * 2)
@@ -115,5 +128,5 @@ class WebService(WebService):
 
 
 def get_service():
-    logging.error('GET FB SERVICE')
+    logging.error('GET GMOKSAYA SERVICE')
     return WebService()

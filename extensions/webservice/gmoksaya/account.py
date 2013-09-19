@@ -30,7 +30,6 @@ from sugar3.graphics.icon import Icon
 from sugar3.graphics.menuitem import MenuItem
 
 from jarabe.journal import journalwindow
-from jarabe.journal import model
 from jarabe.webservice import account, accountsmanager
 
 ACCOUNT_NAME = _('Moksaya')
@@ -47,6 +46,11 @@ class Account(account.Account):
         self.gmoksaya = accountsmanager.get_service('gmoksaya')
         self._client = GConf.Client.get_default()
         self._shared_journal_entry = None
+
+        self.gmoksaya.settings.credentials['username'] = \
+            self._client.get_string(self.USERNAME)
+        self.gmoksaya.settings.credentials['api_key'] = \
+            self._client.get_string(self.API_KEY)
 
     def get_description(self):
         return ACCOUNT_NAME
@@ -95,7 +99,7 @@ class _SharedJournalEntry(account.SharedJournalEntry):
             self._alert.show()
         self._alert.props.msg = message
 
-    def _alert_response_cb(self, alert, response_id):
+    def __alert_response_cb(self, alert, response_id):
         journalwindow.get_journal_window().remove_alert(alert)
         self._alert = None
 
@@ -123,8 +127,7 @@ class _ShareMenu(MenuItem):
             GdkPixbuf.PixbufLoader.new_with_mime_type('image/png')
         pixbufloader.set_size(300, 225)
         try:
-            metadata = self._get_metadata()
-            pixbufloader.write(metadata['preview'])
+            pixbufloader.write(self._metadata['preview'])
             pixbuf = pixbufloader.get_pixbuf()
         except Exception as ex:
             logging.debug("_image_file_from_metadata: %s" % (str(ex)))
@@ -135,27 +138,20 @@ class _ShareMenu(MenuItem):
             pixbuf.savev(image_path, 'png', [], [])
 
     def __share_menu_cb(self, menu_item):
-        data = self._get_data()
-
-        if data is None:
-            self.emit('transfer-state-changed',
-                      _('This entry cannot be shared'))
-            return
-
         self.emit('transfer-state-changed', _('Upload started'))
-        project = self._account.Project()
+        project = self._account.gmoksaya.Project()
         project.connect('completed', self.__completed_cb)
         project.connect('updated', self.__updated_cb)
         project.connect('failed', self.__failed_cb)
 
         profile_id = self._account.get_public_id()
-        title = self._metadata.get('title', _('Untitled'))
+        title = str(self._metadata.get('title', _('Untitled')))
         description = self._metadata.get('description', _('No description'))
 
         jobject = datastore.get(self._metadata['uid'])
-        project_file = jobject.file_path
+        project_file = str(jobject.file_path)
 
-        _, screenshot_path = tempfile.mkstemp()
+        __, screenshot_path = tempfile.mkstemp()
         self._image_file_from_metadata(screenshot_path)
 
         project.create(profile_id, title, description,
@@ -171,7 +167,7 @@ class _ShareMenu(MenuItem):
 
     def __failed_cb(self, project, info):
         self.emit('transfer-state-changed',
-                  _('Cannot be uploaded this time, sorry!'))
+                  _('Cannot be uploaded this time, sorry! %s' % info))
 
 
 class _MoksayaPost(account.WebServicePost):
