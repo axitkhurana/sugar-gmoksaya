@@ -18,6 +18,7 @@
 from gettext import gettext as _
 import logging
 import tempfile
+import time
 
 from gi.repository import Gtk
 from gi.repository import GdkPixbuf
@@ -193,13 +194,28 @@ class _MoksayaPost(account.WebServicePost):
 def get_account():
     return Account()
 
+latest_project_name = None
+
+def _project_list_cb(project, info):
+    global latest_project_name
+    projects_list = info['projects']
+    if projects_list:
+        latest_project_name = projects_list[0]['title']
+    else:
+        logging.debug('No posts found!')
+        latest_project_name = ''
+
 def get_post(public_id):
+    global latest_project_name
+    latest_project_name = None
+
     gmoksaya = accountsmanager.get_service('gmoksaya')
     project = gmoksaya.Project()
-    projects_list = project.list(public_id)['projects']
-    if projects_list:
-        project_name = projects_list[0]['title']
-        message = 'I shared a new project {}'.format(project_name)
-        return _MoksayaPost(message=message)
-    logging.debug('No posts found!')
-    return None
+    project.connect('completed', _project_list_cb)
+    project.list(public_id)
+
+    if latest_project_name is None:
+        time.sleep(2)
+
+    message = 'I shared a new project {}'.format(latest_project_name)
+    return _MoksayaPost(message=message)

@@ -47,7 +47,6 @@ class Project(Object):
 
         self._post(project_url, params, files)
 
-    @asynchronous
     def list(self, profile_id):
         profile_url = url_for('profile', profile_id)
         # extract projects from profile dict
