@@ -36,7 +36,8 @@ class WebService(WebService):
 
     def _get_key(self, username, password):
         # FIXME make this asynchronous
-        url = 'http://127.0.0.1:8000/api/v1/token/auth/?format=json'
+        base_url = self._account.gmoksaya.settings.BASE_URL
+        url = '{}token/auth/?format=json'.format(base_url)
         request = urllib2.Request(url)
         base64string = base64.encodestring('%s:%s' % (username,
                                            password)).replace('\n', '')
