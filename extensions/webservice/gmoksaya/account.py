@@ -53,7 +53,7 @@ class Account(account.Account):
             self._client.get_string(self.API_KEY)
 
     def get_description(self):
-        return ACCOUNT_NAME
+        return 'gmoksaya'
 
     def get_token_state(self):
         return self.STATE_VALID
