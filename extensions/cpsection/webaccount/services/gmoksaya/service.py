@@ -26,13 +26,13 @@ from jarabe.webservice import accountsmanager
 from cpsection.webaccount.web_service import WebService
 from sugar3.graphics import style
 
+
 class WebService(WebService):
     def __init__(self):
         self._account = accountsmanager.get_account('gmoksaya')
 
     def get_icon_name(self):
         return 'network-mesh'
-
 
     def _get_key(self, username, password):
         # FIXME make this asynchronous
@@ -124,8 +124,6 @@ class WebService(WebService):
         container.pack_start(title, False, True, 0)
         container.pack_start(vbox, False, True, 0)
         container.show_all()
-
-        self._restore_project_name()
 
 
 def get_service():

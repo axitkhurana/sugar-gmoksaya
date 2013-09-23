@@ -53,6 +53,22 @@ class Account(account.Account):
         self.gmoksaya.settings.credentials['api_key'] = \
             self._client.get_string(self.API_KEY)
 
+        self.project_name = None
+        # Fetch latest project
+        public_id = self.get_public_id()
+        if public_id:
+            project = self.gmoksaya.Project()
+            project.connect('completed', self._project_list_cb)
+            project.list(public_id)
+
+    def _project_list_cb(self, project, info):
+        projects_list = info['projects']
+        if projects_list:
+            self.project_name = projects_list[0]['title']
+        else:
+            logging.debug('No posts found!')
+            self.projects_name = ''
+
     def get_description(self):
         return 'gmoksaya'
 
@@ -69,7 +85,11 @@ class Account(account.Account):
         return client.get_string(self.PUBLIC_ID)
 
     def get_latest_post(self, public_id):
-        return get_post(public_id)
+        project = self.gmoksaya.Project()
+        project.connect('completed', self._project_list_cb)
+        project.list(public_id)
+        message = 'I shared a new project {}'.format(self.project_name)
+        return _MoksayaPost(message=message)
 
 
 class _SharedJournalEntry(account.SharedJournalEntry):
@@ -193,29 +213,3 @@ class _MoksayaPost(account.WebServicePost):
 
 def get_account():
     return Account()
-
-latest_project_name = None
-
-def _project_list_cb(project, info):
-    global latest_project_name
-    projects_list = info['projects']
-    if projects_list:
-        latest_project_name = projects_list[0]['title']
-    else:
-        logging.debug('No posts found!')
-        latest_project_name = ''
-
-def get_post(public_id):
-    global latest_project_name
-    latest_project_name = None
-
-    gmoksaya = accountsmanager.get_service('gmoksaya')
-    project = gmoksaya.Project()
-    project.connect('completed', _project_list_cb)
-    project.list(public_id)
-
-    if latest_project_name is None:
-        time.sleep(2)
-
-    message = 'I shared a new project {}'.format(latest_project_name)
-    return _MoksayaPost(message=message)
