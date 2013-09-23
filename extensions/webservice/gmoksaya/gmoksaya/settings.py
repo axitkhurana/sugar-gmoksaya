@@ -15,7 +15,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301 USA.
 
-BASE_URL = "http://127.0.0.1:8000/api/v1/"
+BASE_URL = "http://moksaya-rahulgaur.rhcloud.com/api/v1/"
 
 # TODO Use GET request to BASE_URL populate avaiable resource paths
 
