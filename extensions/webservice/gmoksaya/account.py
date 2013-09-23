@@ -59,15 +59,19 @@ class Account(account.Account):
         if public_id:
             project = self.gmoksaya.Project()
             project.connect('completed', self._project_list_cb)
+            project.connect('failed', self._project_failed_cb)
             project.list(public_id)
 
     def _project_list_cb(self, project, info):
         projects_list = info['projects']
         if projects_list:
-            self.project_name = projects_list[0]['title']
+            self.project_name = projects_list[-1]['title']
         else:
             logging.debug('No posts found!')
             self.projects_name = ''
+
+    def _project_failed_cb(self, project, info):
+        logging.debug('Project list fetch failed! %s' % info)
 
     def get_description(self):
         return 'gmoksaya'
